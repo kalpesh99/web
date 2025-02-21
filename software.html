@@ -1,0 +1,224 @@
+Here is a simple **webpage comparing Pascal with C**, highlighting C's weaknesses and how Pascal addresses them. The page includes **code snippets** for better understanding.  
+
+---
+
+### **Code: HTML + CSS**
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pascal vs C - A Comparison</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+        }
+        h2 {
+            color: #444;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+        code {
+            background: #eee;
+            padding: 5px;
+            border-radius: 5px;
+            display: block;
+            white-space: pre-wrap;
+            font-family: "Courier New", monospace;
+        }
+        .highlight {
+            background: #ffdddd;
+            padding: 5px;
+            border-left: 4px solid red;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Pascal vs C - A Comparison</h1>
+
+    <h2>1. Type Safety: Implicit Type Conversion Bugs</h2>
+    <p><strong>C Problem:</strong> C allows implicit type conversions, leading to unexpected bugs.</p>
+    <code class="highlight">
+#include &lt;stdio.h&gt;
+
+int main() {
+    int num = 10.5; // Implicitly converts float to int, losing 0.5
+    printf("%d", num); // Prints 10, losing precision
+    return 0;
+}
+    </code>
+    <p><strong>Pascal Fix:</strong> Pascal enforces strict type checking.</p>
+    <code>
+program TypeCheck;
+var
+  num: integer;
+  decimal: real;
+begin
+  decimal := 10.5;
+  num := Trunc(decimal); // Explicit conversion needed
+  writeln(num); // Error if implicit conversion attempted
+end.
+    </code>
+
+    <h2>2. Array: No Bound Checking in C</h2>
+    <p><strong>C Problem:</strong> C does not check array bounds, causing buffer overflows.</p>
+    <code class="highlight">
+#include &lt;stdio.h&gt;
+
+int main() {
+    int arr[3] = {1, 2, 3};
+    arr[5] = 10; // Out-of-bounds, corrupts memory
+    return 0;
+}
+    </code>
+    <p><strong>Pascal Fix:</strong> Pascal checks array bounds and prevents errors.</p>
+    <code>
+program SafeArray;
+var
+  arr: array[1..3] of integer;
+begin
+  arr[1] := 10;
+  arr[4] := 20; // Compile-time error: Index out of range
+end.
+    </code>
+
+    <h2>3. Strings: Unsafe NULL-Terminated Strings in C</h2>
+    <p><strong>C Problem:</strong> C strings use `\0` for termination, leading to buffer overflows.</p>
+    <code class="highlight">
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+
+int main() {
+    char str[5] = "Hello"; // No space for null-terminator!
+    printf("%s", str); // Undefined behavior
+    return 0;
+}
+    </code>
+    <p><strong>Pascal Fix:</strong> Pascal stores the string length in the first byte, preventing overflow.</p>
+    <code>
+program SafeString;
+var
+  str: string[5];
+begin
+  str := 'Hello'; // Error: Exceeds max length
+end.
+    </code>
+
+    <h2>4. Pointer Arithmetic: Unsafe Memory Access in C</h2>
+    <p><strong>C Problem:</strong> C allows direct memory access via pointers, leading to crashes.</p>
+    <code class="highlight">
+#include &lt;stdio.h&gt;
+
+int main() {
+    int arr[3] = {10, 20, 30};
+    int *ptr = arr;
+    ptr += 5; // Points to invalid memory
+    printf("%d", *ptr); // Undefined behavior
+    return 0;
+}
+    </code>
+    <p><strong>Pascal Fix:</strong> Pascal restricts pointer arithmetic.</p>
+    <code>
+program SafePointer;
+var
+  ptr: ^integer;
+begin
+  New(ptr);
+  ptr^ := 100;
+  Dispose(ptr);
+end.
+    </code>
+
+    <h2>5. Syntax Complexity in C</h2>
+    <p><strong>C Problem:</strong> The combination of `*`, `()`, and `[]` makes C syntax confusing.</p>
+    <code class="highlight">
+#include &lt;stdio.h&gt;
+
+int (*funcPtr)(int); // Pointer to a function returning int
+
+int main() {
+    int arr[5] = {1,2,3,4,5};
+    int *ptr = arr; // Pointer arithmetic makes it hard to read
+    printf("%d", *(ptr + 2)); // Accessing arr[2] in a cryptic way
+    return 0;
+}
+    </code>
+    <p><strong>Pascal Fix:</strong> Pascal uses a clearer syntax.</p>
+    <code>
+program ReadableSyntax;
+var
+  num: integer;
+  arr: array[1..5] of integer;
+begin
+  num := arr[2]; // Simple and easy to understand
+end.
+    </code>
+
+    <h2>6. Module System: No Proper Module Support in C</h2>
+    <p><strong>C Problem:</strong> Uses header files instead of a real module system.</p>
+    <code class="highlight">
+// file1.h
+int add(int a, int b);
+
+// file1.c
+#include "file1.h"
+int add(int a, int b) { return a + b; }
+
+// main.c
+#include "file1.h"
+#include &lt;stdio.h&gt;
+int main() {
+    printf("%d", add(2, 3));
+}
+    </code>
+    <p><strong>Pascal Fix:</strong> Pascal uses a **proper module system** with `unit`.</p>
+    <code>
+// MathUnit.pas
+unit MathUnit;
+interface
+function Add(a, b: integer): integer;
+implementation
+function Add(a, b: integer): integer;
+begin
+  Add := a + b;
+end;
+end.
+
+// main.pas
+program ModuleExample;
+uses MathUnit;
+begin
+  writeln(Add(2, 3)); // 5
+end.
+    </code>
+
+</div>
+
+</body>
+</html>
+```
+
+---
+
+## **How This Webpage Helps**
+- **Explains major C weaknesses (type safety, memory issues, module system, syntax complexity)**
+- **Provides clear code snippets of C problems and Pascal solutions**
+- **Uses a clean layout with CSS to highlight issues clearly**
+
+💡 **You can host this webpage using GitHub Pages!** 🚀
