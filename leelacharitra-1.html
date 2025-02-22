@@ -27,7 +27,7 @@
 		#header { 
 			box-sizing: border-box;  
 			width: 98%; 
-			margin-top: 1%; margin-left: 1%; margin-right: 1%; 
+			margin-top: 10px; margin-left: 1%; margin-right: 1%; 
 			border-radius: 20px; 
 			background-color: rgb(255, 243, 230); 
 			font-family: 'Rasa', serif;  
@@ -39,13 +39,14 @@
 			margin: 0 0 0 0; 
 		}
 
+
 		#nav {  
 			box-sizing: border-box;  
 			/*position: relative;*/ 
 			width: 18.5%;  
 			float: left;  
 			border-radius: 20px; 
-			margin-top: 1%; 
+			margin-top: 10px; 
 			margin-left: 1%; 
 			margin-right: 0.5%;
 			padding-top: 0.75em;
@@ -54,6 +55,14 @@
 			padding-right: 1em;
 			background-color: rgb(255, 243, 230); 
 		} 
+		
+		@media screen and (max-width: 800px) {
+			#nav {
+			width: 98%;    /* Full width on small screens */
+			float: none;    /* Cancel the float so it stacks on top */
+			}
+		}
+
 		#nav h2 {
 			font-size: 2em;
 			font-family: 'Rasa', serif;
@@ -136,34 +145,68 @@
 		}*/
 
 
-		#main {  
-			box-sizing: border-box; 
-			/*position: relative;*/  
-			width: 78.5%;  
-			float: right;   
-			border-radius: 20px; 
-			margin-top: 1%; 
-			margin-left: 0.5%; 
-			margin-right: 1%; 
+		#content {
+			/* box-sizing: border-box; */
+			/* position: relative; */
+			width: 78.5%;
+			float: right;
+			
+			margin-left: 0.5%;
+			margin-right: 1%;
+			
+			/*border-radius: 20px;
+			margin-top: 1%;
+			margin-left: 0.5%;
+			margin-right: 1%;
 			padding-top: 0.75em;
-			padding-left: 1em; 
-			padding-right: 1em; 
+			padding-left: 1em;
+			padding-right: 1em;
+			background-color: rgb(255, 243, 230);*/
+		}
+
+		@media screen and (max-width: 800px) {
+			#content {
+				/* margin-left: 0; */ /* Remove left margin since nav is no longer on the side */
+				width: 98%;
+			}
+		}
+
+		#content .post {
+			box-sizing: border-box;
+			/* position: relative; */
+			border-radius: 20px;
+			margin-top: 10px;
+			margin-bottom: 10px;
+			
+			/*margin-top: 1%;
+			margin-left: 0.5%;
+			margin-right: 1%; */
+			padding-top: 0.75em;
+			padding-left: 1em;
+			padding-right: 1em;
 			background-color: rgb(255, 243, 230);
-		} 
-		#main h2 { 
+
+			/*
+			margin-bottom: 20px; /* Space between posts */
+			padding-bottom: 10px;
+			border-bottom: 1px solid #ccc; /* Optional: visual separation */
+			*/
+		}
+		
+		#content h2 { 
 			margin-top: 0;
 			margin-bottom: 0;
 			font-family: 'Rasa', serif;  
 			font-size: 2em; 
 			color: maroon; 
 		}
-	    #main p { 
+	    #content p { 
 			margin-top: 0.5em;
 			margin-bottom: 0.5em;
 			font-family: 'Rasa', serif;  
 			font-size: 1.5em;
 		}
-	    #main pre { 
+	    #content pre { 
 			font-family: 'Rasa', serif;  
 			font-size: 1.5em; 
 			white-space: pre-line;
@@ -171,7 +214,7 @@
 		}
 		
 		/*
-		#main #quote {
+		#content #quote {
 			font-family: 'Rasa', serif;  
 			font-size: 1.5em; 
 			white-space: pre-line;
@@ -186,6 +229,13 @@
 			float: right;
 			margin-left: 0.5%;
 			margin-right: 1%;
+		}
+		@media screen and (max-width: 800px) {
+			#footer {
+				width: 100%;
+				margin: 0 0 0 0;
+				float: none;
+			}
 		}
 		#footer p { font-family: 'Rasa', serif;  font-size: 1.5em; text-align: center; }
 		
@@ -215,7 +265,7 @@
 			text-align:left;
 			width: 210px;
 		}
-		#main {
+		#content {
 			float:left;
 			margin: 10px auto;
 			text-align:left;
@@ -278,7 +328,8 @@
 		
 	</div>
 
-	<div id="main">
+	<div id="content">
+	<div class="post">
 	<h2 id="charitra-1"> શ્રી હરિ પ્રગટ પ્રતાપ - શ્રી હરિચરિત્ર ચિંતામણિ</h2>
 		<p>તેજપર ગામે સંતોના વિચરણથી ઠાકોર ભાવસીંહજી હેમંતજીને સત્સંગનો યોગ થયો. સંતો જ્યારે જ્યારે વિચરણમાં પધારે ત્યારે ગામના હિરાદાસ પટેલ વગેરે સહુ હરિભકતો સાથે મળીને તેઓ ખુબ સંત-સમાગમ કરતા અને પંચ વર્તમાનને પરિપુર્ણ શારધાર પાળતા, એમને સંતોના યોગથી શ્રીહરિના સ્વરુપમાં પરિપુર્ણ નિશ્ચય થયો હતો.  </p>
 
@@ -290,7 +341,8 @@
 		
 		<p>એજ રાત્રીએ ગામ અમદાવાદ જિલ્લાના કોઠ ગામે સદગુરુ ભકિતનંદનદાસ સ્વામી પોતાના મંડળ સાથે બીરાજતા હતા, ત્યાં એમને શ્રીહરિના દર્શન થયા,  શ્રીજી મહારાજને સહું સંતો ભકતો સાથે ભાવસીંહજીની ઓસરીએ શીરો-પુરીની રસોઇ જમતા દીઠા અને પછી ભાવસીંહજીને દેહ ત્યાગ કરાવીને પોતાના ધામમાં તેડી ગયા. શ્રીભકિતનંદન સ્વામીએ સવારે પુજાપાઠ કરીને એમના મંડળના સહું સંતોને વાત કરી કે આજે રાત્રે તેજપરના ભાવસીંહજીને શ્રીહરિ તેડી ગયા છે. આમ પ્રગટ પ્રતાપ શ્રીહરિએ જણાવ્યો. </p>
 
-
+	</div>
+	<div class="post">
 	<h2 id="charitra-2"> શુરવિરતા સભર સત્સંગનો પક્ષ - શ્રી હરિલીલામૃત કળશ ૮ વિશ્રામ ૫૪</h2>
 		<p>શ્રીહરિ સુરાખાચર ના ગામ લોયા-નાગડકા પાસે ચૂડા નામે ગામ છે. આ ચૂડા ગામમાં શ્રીહરિના પરમભકત અને શુરવિર એવા ભીમ પંડયા રહેતા. તેઓ જ્ઞાતિ અને આચરણે તો બ્રાહ્મણ હતા પરંતુ સ્વભાવ તથા કર્મે તેઓ મોટા ખેડૂત હતા. ભીમ પંડયામાં “યથા નામ તથા ગુણ” હતા. તેઓ આદર્શ નિતિપ્રીય શુરવિર ભકત હતા. તેઓ ચૂડા પાસેના વેજળકાં ગામની ૧૦૦૦ વિઘાના જમીનદાર હતા, આમ તેઓ બ્રાહ્મણ હોવા છતાં કર્મથી કર્મઠ ખેડૂંત હતા, સત્સંગના રંગે રંગાયા પછી તેઓ પોતે ત્રિકાળ સંધ્યા અને પાંચ માનસીપુજા કાયમ કરતા, આમ પોતાના બ્રાહ્મણત્વની સાથે સદાચાર અને પંચ વર્તમાન પણ પરિપુર્ણ પાળતા. તેમની ધર્મમય શુરવિરતાની ગામમાં સારી છાપ પડેલ હતી, આથી પુરાયે વેજળકા અને ચૂડા ગામમાં ભીમ પંડયાને સૌ કોઇ માનપુર્વક બોલાવતા. </p>
        
@@ -319,6 +371,9 @@
 			એહ આદિ રસોઇયા જાણ્યા, વૃષનંદને સૌને વખાણ્યા…! </pre>
 
   
+
+	</div>
+	<div class="post">
 	<h2 id="charitra-3">યથા ગુણ તથા નામ - શ્રી નંદસંતોના જીવન કવન</h2>
 		<p>ગઢપુર મંદિરના સર્વપ્રથમ મહંત એવા સદગુરૂ વિરક્તાનંદ સ્વામીનો જન્મ ભાલપ્રદેશમાં ખંભાત બારામાં ‘કલોદરા’ ગામમાં થયો હતો. તેઓ નાનપણથી જ ધર્મનિષ્ઠ અને ભગવાનને વિષે અતિ પ્રીતિવાળા હતા. પોતે પુર્વજન્મના મુમુક્ષું હોય એમને નાનીવયે જ વૈરાગ્યનો રંગ લાગતા અસાર સંસાર કડવા ઝેર જેવો લાગ્યો. તેથી પોતે વિરક્ત સ્થિતિમાં રહેતા. તેથી શ્રીજીમહારાજે જ્યારે તેઓ સાધુ થયા ત્યારે “યથા ગુણ તથા નામ’’ એ ન્યાયે તેમનું નામ સાધું વિરક્તાનંદ પાડ્યું હતું. તેઓને ખૂબ જ ગુણવાન અને વ્યવહારમાં કુશળ જાણી શ્રી હરિએ તેમને ગઢપુર મંદિરના પ્રથમ મહંત કર્યા હતા. મહંત બન્યા ત્યારે શ્રી હરિએ આજ્ઞા કરીકે નિષ્કામ ભાવે સમર્પિત થઈને ગઢપુર મંદિરની સેવા સારી કરજો તથા સંત અને હરિભક્તોની સંભાવના રાખજો. </p>
 
@@ -329,6 +384,9 @@
 		<p>વિરક્તાનંદ સ્વામીને જ્યારે પોતાની ભૂલ ઓળખાણી ત્યારે મનમાં ખૂબજ પસ્તાવો થયો ને તેમની આંખમાંથી પશ્ચાતાપના આંસું નીકળ્યાકે હું શ્રીજીમહારાજની આજ્ઞા પાળી શક્યો નહિ માટે હવે શ્રીજીમહારાજ રાજી થાય તેમ જ વર્તવું, પછી મહારાજની આજ્ઞા પ્રમાણે વર્તી શ્રીહરિની સેવા કરી શ્રીહરિના ધામમાં ગયા હતા. </p>
 
 
+
+	</div>
+	<div class="post">
 	<h2 id="charitra-4">સિંહના તો સિંહ જ હોય ને  - શ્રી ભકતચિંતામણીના મુકતોના ચિંતનમાંથી</h2>
 		<p>શ્રીજીમહારાજના વિરાટ નંદસંતોના નભમંડળમાં અનેક તેજસ્વી નક્ષત્ર મંડળો શોભતાં હતાં. તેમાં સદગુરુ નિત્યાનંદ સ્વામીના મંડળમાં અનેક તેજસ્વી ગ્રહ તારલાઓ હતા. જેમાંના પ્રજ્ઞાનંદ સ્વામી એક નિઃસ્વાર્થ, ઉદાર સેવાભાવી અને કઈંક મુમુક્ષુ માનવીઓને પ્રગટ શ્રીહરિની ઓળખાણ કરાવીને ભગવદનુરાગી બનાવે એવા અતિ સદગુણી હતા. </p>
 
@@ -350,6 +408,7 @@
 			એહાદિ જન મેથાણ માંઇ, ભરાડા માં મુક્ત મોતીબાઇ..!
 			હરિભકત દ્વિજ વજેરામ, તેહ લખીયે લૂવાણે ગામ..!!  </pre>
 
+	</div>
 	</div>		
 
 	<!-- hr width="78.5%" !--> 
@@ -402,5 +461,3 @@ Reference:
 		
 	
 !-->
-	
-	
