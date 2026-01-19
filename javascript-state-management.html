@@ -1,72 +1,17 @@
-<h1 id="javascript-state-management-with-jquery">JavaScript State Management with jQuery</h1>
-<p>A guide to managing application state and keeping the DOM in sync using two approaches: Classic (explicit updates) and Proxy-based (automatic reactivity).</p>
-<h2 id="the-problem">The Problem</h2>
-<p>When building interactive web pages, you need to:</p>
-<ol>
-<li>Store data (state) somewhere</li>
-<li>Update the DOM when state changes</li>
-<li>Update state when users interact with the page</li>
-</ol>
-<p>Without a system, this becomes messy and error-prone.</p>
-<hr>
-<h2 id="html-structure">HTML Structure</h2>
-<p>Both approaches use the same HTML with custom data attributes:</p>
-<pre><code class="lang-html"><span class="hljs-tag">&lt;<span class="hljs-name">h1</span> <span class="hljs-attr">data-tag</span>=<span class="hljs-string">"titleColor"</span> <span class="hljs-attr">data-color</span>&gt;</span>jDux is super cool!<span class="hljs-tag">&lt;/<span class="hljs-name">h1</span>&gt;</span>
-
-<span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"buttonRed"</span>&gt;</span>red<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"buttonBlue"</span>&gt;</span>blue<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"buttonGreen"</span>&gt;</span>green<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
-<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
-
-<span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
-    Count = <span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">data-tag</span>=<span class="hljs-string">"num"</span> <span class="hljs-attr">data-text</span>&gt;</span>#<span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"button"</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"inc"</span>&gt;</span>+<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"button"</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"dec"</span>&gt;</span>-<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
-<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
-
-<span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>First Name: <span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">data-tag</span>=<span class="hljs-string">"firstName"</span> <span class="hljs-attr">data-text</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"firstNameInput"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"text"</span> /&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>Last Name: <span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">data-tag</span>=<span class="hljs-string">"lastName"</span> <span class="hljs-attr">data-text</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"lastNameInput"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"text"</span> /&gt;</span>
-<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
-</code></pre>
-<h3 id="data-attributes-explained">Data Attributes Explained</h3>
-<table>
-<thead>
-<tr>
-<th>Attribute</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>data-tag</code></td>
-<td>Links element to a state property name</td>
-</tr>
-<tr>
-<td><code>data-text</code></td>
-<td>Marks element for text content updates</td>
-</tr>
-<tr>
-<td><code>data-color</code></td>
-<td>Marks element for color attribute updates</td>
-</tr>
-</tbody>
-</table>
-<h3 id="css-for-color-binding">CSS for Color Binding</h3>
-<pre><code class="lang-css"><span class="hljs-selector-attr">[data-color='black']</span> { <span class="hljs-attribute">color</span>: black; }
-<span class="hljs-selector-attr">[data-color='red']</span> { <span class="hljs-attribute">color</span>: red; }
-<span class="hljs-selector-attr">[data-color='blue']</span> { <span class="hljs-attribute">color</span>: blue; }
-<span class="hljs-selector-attr">[data-color='green']</span> { <span class="hljs-attribute">color</span>: green; }
-</code></pre>
-<p>When <code>data-color=&quot;red&quot;</code> is set on an element, CSS attribute selectors automatically apply the color.</p>
+<h1 id="javascript-state-management-three-approaches">JavaScript State Management: Three Approaches</h1>
+<p>This guide explains three different approaches to managing application state in JavaScript with jQuery, plus comparisons with traditional Windows GUI programming.</p>
+<h2 id="the-problem-keeping-ui-in-sync-with-data">The Problem: Keeping UI in Sync with Data</h2>
+<p>In any interactive application, you have:</p>
+<ul>
+<li><strong>State</strong>: The data (counter value, user input, selected color)</li>
+<li><strong>UI</strong>: The DOM elements displaying that data</li>
+</ul>
+<p>The challenge is keeping them synchronized. When state changes, the UI must update.</p>
 <hr>
 <h2 id="approach-1-classic-explicit-update-function-">Approach 1: Classic (Explicit Update Function)</h2>
-<h3 id="concept">Concept</h3>
-<p>Create a State object with an <code>updateState()</code> method. Every time you change state, you must call this method.</p>
-<h3 id="code">Code</h3>
+<p><strong>File:</strong> <code>index.html</code> (active code)</p>
+<h3 id="how-it-works">How It Works</h3>
+<p>State is a plain JavaScript object with an <code>updateState()</code> method that must be called explicitly whenever you change a value.</p>
 <pre><code class="lang-javascript"><span class="hljs-keyword">var</span> State = {
     <span class="hljs-attr">num</span>: <span class="hljs-number">0</span>,
     <span class="hljs-attr">firstName</span>: <span class="hljs-string">""</span>,
@@ -75,245 +20,769 @@
     <span class="hljs-attr">updateState</span>: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">key, value</span>) </span>{
         <span class="hljs-keyword">this</span>[key] = value;
 
-        <span class="hljs-comment">// Update all text displays</span>
+        <span class="hljs-comment">// Sync all text elements</span>
         $(<span class="hljs-string">"[data-text]"</span>).each(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">index, elem</span>) </span>{
             <span class="hljs-keyword">var</span> tag = $(elem).attr(<span class="hljs-string">"data-tag"</span>);
             $(elem).text(State[tag]);
         });
 
-        <span class="hljs-comment">// Update all color displays</span>
+        <span class="hljs-comment">// Sync all color elements</span>
         $(<span class="hljs-string">"[data-color]"</span>).each(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">index, elem</span>) </span>{
             <span class="hljs-keyword">var</span> tag = $(elem).attr(<span class="hljs-string">"data-tag"</span>);
             $(elem).attr(<span class="hljs-string">"data-color"</span>, State[tag]);
         });
     }
 };
-
-<span class="hljs-comment">// Initialize on page load</span>
-$(<span class="hljs-built_in">document</span>).ready(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
-    State.updateState();
-});
-
-<span class="hljs-comment">// Event handlers</span>
+</code></pre>
+<h3 id="usage">Usage</h3>
+<pre><code class="lang-javascript"><span class="hljs-comment">// Increment counter</span>
 $(<span class="hljs-string">"#inc"</span>).on(<span class="hljs-string">"click"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
     State.updateState(<span class="hljs-string">"num"</span>, State.num + <span class="hljs-number">1</span>);
 });
 
-$(<span class="hljs-string">"#dec"</span>).on(<span class="hljs-string">"click"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
-    State.updateState(<span class="hljs-string">"num"</span>, State.num - <span class="hljs-number">1</span>);
-});
-
+<span class="hljs-comment">// Update name</span>
 $(<span class="hljs-string">"#firstNameInput"</span>).on(<span class="hljs-string">"input"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
     State.updateState(<span class="hljs-string">"firstName"</span>, $(<span class="hljs-keyword">this</span>).val());
 });
-
-$(<span class="hljs-string">"#lastNameInput"</span>).on(<span class="hljs-string">"input"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
-    State.updateState(<span class="hljs-string">"lastName"</span>, $(<span class="hljs-keyword">this</span>).val());
-});
-
-$(<span class="hljs-string">'[class^=button]'</span>).on(<span class="hljs-string">"click"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">e</span>) </span>{
-    State.updateState(<span class="hljs-string">"titleColor"</span>, e.target.innerText);
-});
 </code></pre>
-<h3 id="how-it-works">How It Works</h3>
-<ol>
-<li><strong>State Object</strong>: Holds all application data plus the <code>updateState</code> method</li>
-<li><strong>updateState(key, value)</strong>:<ul>
-<li>Sets <code>this[key] = value</code></li>
-<li>Loops through ALL elements with <code>data-text</code>, updates their text</li>
-<li>Loops through ALL elements with <code>data-color</code>, updates their attribute</li>
-</ul>
-</li>
-<li><strong>Event Handlers</strong>: Must explicitly call <code>State.updateState()</code> with key and new value</li>
-</ol>
-<h3 id="pros">Pros</h3>
-<ul>
-<li>Simple to understand</li>
-<li>Works in all browsers (including old ones)</li>
-<li>Easy to debug - you can see exactly when updates happen</li>
-</ul>
-<h3 id="cons">Cons</h3>
-<ul>
-<li>Must remember to call <code>updateState()</code> every time</li>
-<li>Verbose syntax: <code>State.updateState(&quot;num&quot;, State.num + 1)</code></li>
-<li>Re-renders ALL elements on every change (inefficient for large apps)</li>
-</ul>
+<h3 id="data-flow">Data Flow</h3>
+<pre><code>User clicks button
+       ↓
+Event <span class="hljs-keyword">handler</span> fires
+       ↓
+<span class="hljs-keyword">Call</span> State.updateState(<span class="hljs-keyword">key</span>, <span class="hljs-keyword">value</span>)
+       ↓
+State <span class="hljs-keyword">object</span> <span class="hljs-keyword">updated</span> + DOM synced
+</code></pre><h3 id="pros-cons">Pros &amp; Cons</h3>
+<table>
+<thead>
+<tr>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Simple, easy to understand</td>
+<td>Verbose - must call <code>updateState()</code> every time</td>
+</tr>
+<tr>
+<td>Works in all browsers (IE included)</td>
+<td>Error-prone - easy to forget the call</td>
+</tr>
+<tr>
+<td>Explicit - clear when updates happen</td>
+<td>Inefficient - re-syncs ALL elements</td>
+</tr>
+<tr>
+<td>Easy to debug</td>
+</tr>
+</tbody>
+</table>
 <hr>
 <h2 id="approach-2-proxy-based-reactivity">Approach 2: Proxy-Based Reactivity</h2>
-<h3 id="concept">Concept</h3>
-<p>Use JavaScript&#39;s <code>Proxy</code> to intercept property assignments. The DOM updates automatically when you change any state value.</p>
-<h3 id="what-is-proxy-">What is Proxy?</h3>
-<p><code>Proxy</code> is a built-in JavaScript feature (ES6/2015) that wraps an object and intercepts operations like getting or setting properties.</p>
-<pre><code class="lang-javascript"><span class="hljs-keyword">var</span> proxy = <span class="hljs-keyword">new</span> Proxy(targetObject, {
-    <span class="hljs-keyword">get</span>(obj, key) { <span class="hljs-comment">/* intercepts reads */</span> },
-    <span class="hljs-keyword">set</span>(obj, key, <span class="hljs-keyword">value</span>) { <span class="hljs-comment">/* intercepts writes */</span> }
-});
-</code></pre>
-<h3 id="code">Code</h3>
-<pre><code class="lang-javascript"><span class="hljs-keyword">var</span> State = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Proxy</span>({
-    <span class="hljs-attr">num</span>: <span class="hljs-number">0</span>,
-    <span class="hljs-attr">firstName</span>: <span class="hljs-string">""</span>,
-    <span class="hljs-attr">lastName</span>: <span class="hljs-string">""</span>,
-    <span class="hljs-attr">titleColor</span>: <span class="hljs-string">"black"</span>
+<p><strong>File:</strong> <code>index.html</code> (commented code, lines 97-162)</p>
+<h3 id="how-it-works">How It Works</h3>
+<p>Uses JavaScript&#39;s <code>Proxy</code> object to intercept property assignments. When you write <code>State.num = 5</code>, the Proxy automatically triggers a DOM update. This is how Vue.js implements reactivity internally.</p>
+<pre><code class="lang-javascript"><span class="hljs-keyword">var</span> State = <span class="hljs-keyword">new</span> Proxy({
+    num: <span class="hljs-number">0</span>,
+    firstName: <span class="hljs-string">""</span>,
+    lastName: <span class="hljs-string">""</span>,
+    titleColor: <span class="hljs-string">"black"</span>
 }, {
-    set(obj, key, value) {
-        obj[key] = value;
-        $(<span class="hljs-string">'[data-tag="'</span> + key + <span class="hljs-string">'"][data-text]'</span>).text(value);
-        $(<span class="hljs-string">'[data-tag="'</span> + key + <span class="hljs-string">'"][data-color]'</span>).attr(<span class="hljs-string">"data-color"</span>, value);
+    <span class="hljs-keyword">set</span>(obj, key, <span class="hljs-keyword">value</span>) {
+        obj[key] = <span class="hljs-keyword">value</span>;
+        <span class="hljs-comment">// Automatically sync DOM when any property changes</span>
+        $(<span class="hljs-string">'[data-tag="'</span> + key + <span class="hljs-string">'"][data-text]'</span>).text(<span class="hljs-keyword">value</span>);
+        $(<span class="hljs-string">'[data-tag="'</span> + key + <span class="hljs-string">'"][data-color]'</span>).attr(<span class="hljs-string">"data-color"</span>, <span class="hljs-keyword">value</span>);
         <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
     }
 });
-
-<span class="hljs-comment">// Initialize on page load</span>
-$(<span class="hljs-built_in">document</span>).ready(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> key <span class="hljs-keyword">in</span> State) {
-        $(<span class="hljs-string">'[data-tag="'</span> + key + <span class="hljs-string">'"][data-text]'</span>).text(State[key]);
-        $(<span class="hljs-string">'[data-tag="'</span> + key + <span class="hljs-string">'"][data-color]'</span>).attr(<span class="hljs-string">"data-color"</span>, State[key]);
-    }
-});
-
-<span class="hljs-comment">// Event handlers - much simpler!</span>
+</code></pre>
+<h3 id="usage">Usage</h3>
+<pre><code class="lang-javascript"><span class="hljs-comment">// Increment counter - just use normal assignment!</span>
 $(<span class="hljs-string">"#inc"</span>).on(<span class="hljs-string">"click"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
     State.num++;
 });
 
-$(<span class="hljs-string">"#dec"</span>).on(<span class="hljs-string">"click"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
-    State.num--;
-});
-
+<span class="hljs-comment">// Update name</span>
 $(<span class="hljs-string">"#firstNameInput"</span>).on(<span class="hljs-string">"input"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
     State.firstName = $(<span class="hljs-keyword">this</span>).val();
 });
-
-$(<span class="hljs-string">"#lastNameInput"</span>).on(<span class="hljs-string">"input"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
-    State.lastName = $(<span class="hljs-keyword">this</span>).val();
-});
-
-$(<span class="hljs-string">'[class^=button]'</span>).on(<span class="hljs-string">"click"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">e</span>) </span>{
-    State.titleColor = e.target.innerText;
-});
 </code></pre>
-<h3 id="how-it-works">How It Works</h3>
-<p>When you write <code>State.num++</code>, here&#39;s what happens behind the scenes:</p>
-<pre><code>State.num++
-    ↓
-Expands to: State<span class="hljs-selector-class">.num</span> = State<span class="hljs-selector-class">.num</span> + <span class="hljs-number">1</span>
-    ↓
+<h3 id="data-flow">Data Flow</h3>
+<pre><code>User clicks <span class="hljs-string">"+"</span> button
+       ↓
+$(<span class="hljs-string">"#inc"</span>).on(<span class="hljs-string">"click"</span>, ...) fires
+       ↓
+State.num++
+       ↓
 ┌───────────────────────────────┐
 │  Proxy intercepts             │
 ├───────────────────────────────┤
-│  <span class="hljs-number">1</span>. GET trap → returns <span class="hljs-number">0</span>      │
-│  <span class="hljs-number">2</span>. JavaScript does <span class="hljs-number">0</span> + <span class="hljs-number">1</span> = <span class="hljs-number">1</span> │
-│  <span class="hljs-number">3</span>. SET trap → receives <span class="hljs-number">1</span>     │
-│     - stores <span class="hljs-keyword">in</span> obj<span class="hljs-selector-class">.num</span>       │
+│  <span class="hljs-number">1.</span> GET trap → returns <span class="hljs-number">0</span>      │
+│  <span class="hljs-number">2.</span> JavaScript does <span class="hljs-number">0</span> + <span class="hljs-number">1</span> = <span class="hljs-number">1</span> │
+│  <span class="hljs-number">3.</span> SET trap → receives <span class="hljs-number">1</span>     │
+│     - stores in obj.num       │
 │     - updates DOM             │
 └───────────────────────────────┘
-    ↓
-&lt;<span class="hljs-selector-tag">span</span> data-tag=<span class="hljs-string">"num"</span>&gt; shows <span class="hljs-string">"1"</span>
-</code></pre><h3 id="pros">Pros</h3>
-<ul>
-<li>Natural JavaScript syntax: <code>State.num++</code> instead of <code>State.updateState(&quot;num&quot;, State.num + 1)</code></li>
-<li>Impossible to forget to trigger updates</li>
-<li>Only updates elements matching the changed key (more efficient)</li>
-<li>This is how Vue.js implements reactivity</li>
-</ul>
-<h3 id="cons">Cons</h3>
-<ul>
-<li>Not supported in Internet Explorer</li>
-<li>Slightly harder to understand initially</li>
-<li>Debugging can be trickier (updates happen &quot;magically&quot;)</li>
-</ul>
-<h3 id="browser-support">Browser Support</h3>
+       ↓
+&lt;span data-tag=<span class="hljs-string">"num"</span>&gt; shows <span class="hljs-string">"1"</span>
+</code></pre><h3 id="pros-cons">Pros &amp; Cons</h3>
 <table>
 <thead>
 <tr>
-<th>Browser</th>
-<th>Minimum Version</th>
+<th>Pros</th>
+<th>Cons</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Chrome</td>
-<td>49+ (2016)</td>
+<td>Clean syntax (<code>State.num++</code>)</td>
+<td>No IE support (Proxy can&#39;t be polyfilled)</td>
 </tr>
 <tr>
-<td>Firefox</td>
-<td>18+ (2013)</td>
+<td>Impossible to forget updates</td>
+<td>&quot;Magical&quot; - updates happen invisibly</td>
 </tr>
 <tr>
-<td>Safari</td>
-<td>10+ (2016)</td>
+<td>Efficient - only updates changed property</td>
+<td>Harder to trace/debug</td>
 </tr>
 <tr>
-<td>Edge</td>
-<td>12+ (2015)</td>
-</tr>
-<tr>
-<td>IE</td>
-<td>Not supported</td>
+<td>Modern pattern (Vue.js style)</td>
 </tr>
 </tbody>
 </table>
 <hr>
-<h2 id="comparison">Comparison</h2>
+<h2 id="approach-3-redux-pattern">Approach 3: Redux Pattern</h2>
+<p><strong>File:</strong> <code>redux-example.html</code></p>
+<h3 id="how-it-works">How It Works</h3>
+<p>Redux enforces strict unidirectional data flow with three principles:</p>
+<ol>
+<li><strong>Single source of truth</strong> - One store holds all state</li>
+<li><strong>State is read-only</strong> - Only way to change is dispatching actions</li>
+<li><strong>Pure functions</strong> - Reducers compute new state without side effects</li>
+</ol>
+<h3 id="architecture">Architecture</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│                        REDUX FLOW                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   <span class="hljs-keyword">User</span> <span class="hljs-title">Action</span> ──→ dispatch(action) ──→ Reducer ──→ Store   │
+│        ↑                                            │       │
+│        │                                            ↓       │
+│        └──────────────── UI ←── subscribe() ←──────┘       │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre><h3 id="complete-code-example">Complete Code Example</h3>
+<p><strong>HTML:</strong></p>
+<pre><code class="lang-html"><span class="hljs-tag">&lt;<span class="hljs-name">h1</span>&gt;</span>jQuery + Redux is an extremely powerful solution<span class="hljs-tag">&lt;/<span class="hljs-name">h1</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
+  Count = <span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"num"</span>&gt;</span>#<span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"button"</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"inc"</span>&gt;</span>+<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"button"</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"dec"</span>&gt;</span>-<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>First Name: <span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"firstName"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"firstNameInput"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"text"</span> <span class="hljs-attr">val</span>=<span class="hljs-string">""</span> /&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>Last Name: <span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"lastName"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"lastNameInput"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"text"</span> <span class="hljs-attr">val</span>=<span class="hljs-string">""</span> /&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+</code></pre>
+<p><strong>JavaScript - Counter Store:</strong></p>
+<pre><code class="lang-javascript">// Reducer: pure function that computes new <span class="hljs-keyword">state</span>
+const counter = (<span class="hljs-keyword">state</span> = <span class="hljs-number">0</span>, actions) =&gt; {
+  switch (actions.type) {
+    case 'INCREMENT': return <span class="hljs-keyword">state</span> + <span class="hljs-number">1</span>;
+    case 'DECREMENT': return <span class="hljs-keyword">state</span> - <span class="hljs-number">1</span>;
+    <span class="hljs-keyword">default</span>: return <span class="hljs-keyword">state</span>
+  }
+}
+
+// Create store with reducer
+const store = Redux.createStore(counter);
+
+// Event handlers dispatch actions
+$('<span class="hljs-comment">#inc').click(() =&gt; store.dispatch({type: 'INCREMENT'}));</span>
+$('<span class="hljs-comment">#dec').click(() =&gt; store.dispatch({type: 'DECREMENT'}));</span>
+
+// Subscribe <span class="hljs-keyword">to</span> updates - sync UI when <span class="hljs-keyword">state</span> changes
+store.subscribe(() =&gt; {
+  $('<span class="hljs-comment">#num').html(store.getState())</span>
+});
+</code></pre>
+<p><strong>JavaScript - Name Store:</strong></p>
+<pre><code class="lang-javascript">// Reducer <span class="hljs-keyword">for</span> name <span class="hljs-keyword">state</span>
+const updateNameReducer = (<span class="hljs-keyword">state</span> = {}, actions) =&gt; {
+  let {first_name = '', last_name = ''} = actions;
+
+  switch (actions.type) {
+    case 'UPDATE_FIRST_NAME': return Object.assign({}, <span class="hljs-keyword">state</span>, {first_name: first_name});
+    case 'UPDATE_LAST_NAME': return Object.assign({}, <span class="hljs-keyword">state</span>, {last_name: last_name});
+    <span class="hljs-keyword">default</span>: return <span class="hljs-keyword">state</span>
+  }
+}
+
+// Separate store <span class="hljs-keyword">for</span> name <span class="hljs-keyword">state</span>
+const updateNameStore = Redux.createStore(updateNameReducer)
+
+// Dispatch <span class="hljs-keyword">on</span> input changes
+$('<span class="hljs-comment">#firstNameInput').on('input', (e) =&gt; {</span>
+  updateNameStore.dispatch({type: 'UPDATE_FIRST_NAME', first_name: e.target.value});
+});
+$('<span class="hljs-comment">#lastNameInput').on('input', (e) =&gt; {</span>
+  updateNameStore.dispatch({type: 'UPDATE_LAST_NAME', last_name: e.target.value});
+});
+
+// Subscribe and update UI
+updateNameStore.subscribe(() =&gt; {
+  let {first_name, last_name} = updateNameStore.getState();
+
+  $('<span class="hljs-comment">#firstName').html(first_name);</span>
+  $('<span class="hljs-comment">#lastName').html(last_name);</span>
+  console.<span class="hljs-keyword">log</span>(updateNameStore.getState());
+});
+</code></pre>
+<h3 id="data-flow-step-by-step-">Data Flow (Step by Step)</h3>
+<pre><code><span class="hljs-number">1</span>. User clicks <span class="hljs-string">"+"</span> button
+<span class="hljs-number">2</span>. Event handler calls: store.dispatch({type: 'INCREMENT'})
+<span class="hljs-number">3</span>. Redux passes current <span class="hljs-keyword">state</span> + action <span class="hljs-keyword">to</span> reducer
+<span class="hljs-number">4</span>. Reducer returns NEW <span class="hljs-keyword">state</span> (<span class="hljs-keyword">state</span> + <span class="hljs-number">1</span>)
+<span class="hljs-number">5</span>. Redux stores new <span class="hljs-keyword">state</span> and notifies subscribers
+<span class="hljs-number">6</span>. subscribe() callback fires
+<span class="hljs-number">7</span>. Callback reads store.getState() and updates DOM
+</code></pre><h3 id="pros-cons">Pros &amp; Cons</h3>
 <table>
 <thead>
 <tr>
-<th>Aspect</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Predictable - same action = same result</td>
+<td>More boilerplate code</td>
+</tr>
+<tr>
+<td>Excellent debugging (time-travel)</td>
+<td>Learning curve</td>
+</tr>
+<tr>
+<td>Highly testable (pure functions)</td>
+<td>Can be overkill for small apps</td>
+</tr>
+<tr>
+<td>Scales well to large applications</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="comparison-javascript-approaches-vs-winapi">Comparison: JavaScript Approaches vs WinAPI</h2>
+<p>Windows GUI programming with WinAPI uses a <strong>message-driven architecture</strong> that shares surprising similarities with these JavaScript patterns.</p>
+<h3 id="winapi-architecture">WinAPI Architecture</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│                    WINAPI MESSAGE <span class="hljs-keyword">LOOP</span>                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   User <span class="hljs-keyword">Input</span> ──→ Windows Message Queue ──→ GetMessage()    │
+│        ↑                                         │          │
+│        │                                         ↓          │
+│        │                              DispatchMessage()     │
+│        │                                         │          │
+│        │                                         ↓          │
+│        └─────────── WndProc() ←──────────────────┘          │
+│                        │                                    │
+│                        ↓                                    │
+│              <span class="hljs-keyword">switch</span>(msg) { <span class="hljs-keyword">case</span> WM_... }                    │
+│                        │                                    │
+│                        ↓                                    │
+│                 Update UI Controls                          │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre><h3 id="winapi-code-example">WinAPI Code Example</h3>
+<pre><code class="lang-c"><span class="hljs-comment">// Global state</span>
+static <span class="hljs-keyword">int</span> g_counter = <span class="hljs-number">0</span><span class="hljs-comment">;</span>
+
+<span class="hljs-comment">// Message handler (like a Reducer)</span>
+LRESULT CALLBACK WndProc(<span class="hljs-keyword">HWND</span> <span class="hljs-keyword">hwnd</span>, UINT msg, <span class="hljs-keyword">WPARAM</span> <span class="hljs-keyword">wParam</span>, <span class="hljs-keyword">LPARAM</span> <span class="hljs-keyword">lParam</span>) {
+    <span class="hljs-keyword">switch</span>(msg) {
+        <span class="hljs-keyword">case</span> WM_COMMAND:
+            <span class="hljs-keyword">if</span> (LOWORD(<span class="hljs-keyword">wParam</span>) == ID_BTN_INCREMENT) {
+                g_counter++<span class="hljs-comment">;</span>
+                <span class="hljs-comment">// Update UI</span>
+                char buf[<span class="hljs-number">32</span>]<span class="hljs-comment">;</span>
+                sprintf(buf, <span class="hljs-string">"%d"</span>, g_counter)<span class="hljs-comment">;</span>
+                SetWindowText(hCounterLabel, buf)<span class="hljs-comment">;</span>
+            }
+            <span class="hljs-keyword">break</span><span class="hljs-comment">;</span>
+        <span class="hljs-keyword">case</span> WM_DESTROY:
+            PostQuitMessage(<span class="hljs-number">0</span>)<span class="hljs-comment">;</span>
+            <span class="hljs-keyword">break</span><span class="hljs-comment">;</span>
+        <span class="hljs-keyword">default</span>:
+            <span class="hljs-keyword">return</span> DefWindowProc(<span class="hljs-keyword">hwnd</span>, msg, <span class="hljs-keyword">wParam</span>, <span class="hljs-keyword">lParam</span>)<span class="hljs-comment">;</span>
+    }
+    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span><span class="hljs-comment">;</span>
+}
+
+<span class="hljs-comment">// Message loop (like Redux's internal dispatch loop)</span>
+<span class="hljs-keyword">int</span> WINAPI WinMain(<span class="hljs-keyword">HINSTANCE</span> hInst, <span class="hljs-keyword">HINSTANCE</span> hPrev, LPSTR args, <span class="hljs-keyword">int</span> ncmdshow) {
+    <span class="hljs-comment">// ... window creation code ...</span>
+
+    MSG msg<span class="hljs-comment">;</span>
+    <span class="hljs-keyword">while</span> (GetMessage(&amp;msg, NULL, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>)) {
+        TranslateMessage(&amp;msg)<span class="hljs-comment">;</span>
+        DispatchMessage(&amp;msg)<span class="hljs-comment">;  // Sends to WndProc</span>
+    }
+    <span class="hljs-keyword">return</span> msg.wParam<span class="hljs-comment">;</span>
+}
+</code></pre>
+<h3 id="comparison-table">Comparison Table</h3>
+<table>
+<thead>
+<tr>
+<th>Concept</th>
+<th>WinAPI</th>
+<th>Redux</th>
+<th>Classic JS</th>
+<th>Proxy JS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Event Source</strong></td>
+<td>User input, system</td>
+<td>DOM events</td>
+<td>DOM events</td>
+<td>DOM events</td>
+</tr>
+<tr>
+<td><strong>Message/Action</strong></td>
+<td><code>WM_COMMAND</code>, <code>WM_PAINT</code></td>
+<td><code>{type: &#39;INCREMENT&#39;}</code></td>
+<td>Method call</td>
+<td>Property assignment</td>
+</tr>
+<tr>
+<td><strong>Dispatcher</strong></td>
+<td><code>DispatchMessage()</code></td>
+<td><code>store.dispatch()</code></td>
+<td>Direct call</td>
+<td>Proxy trap</td>
+</tr>
+<tr>
+<td><strong>Handler</strong></td>
+<td><code>WndProc()</code> switch</td>
+<td>Reducer switch</td>
+<td><code>updateState()</code></td>
+<td><code>set()</code> trap</td>
+</tr>
+<tr>
+<td><strong>State Location</strong></td>
+<td>Global/static variables</td>
+<td>Store object</td>
+<td>State object</td>
+<td>Proxy target</td>
+</tr>
+<tr>
+<td><strong>UI Update</strong></td>
+<td><code>SetWindowText()</code>, <code>InvalidateRect()</code></td>
+<td><code>subscribe()</code> callback</td>
+<td>Inside <code>updateState()</code></td>
+<td>Inside <code>set()</code> trap</td>
+</tr>
+<tr>
+<td><strong>Loop</strong></td>
+<td><code>GetMessage()</code> while loop</td>
+<td>Browser event loop</td>
+<td>Browser event loop</td>
+<td>Browser event loop</td>
+</tr>
+</tbody>
+</table>
+<h3 id="key-architectural-patterns">Key Architectural Patterns</h3>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>WinAPI</th>
+<th>JavaScript Equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Message Queue</td>
+<td>Windows maintains queue</td>
+<td>Browser event queue</td>
+</tr>
+<tr>
+<td>Message Pump</td>
+<td><code>GetMessage()</code> loop</td>
+<td>Browser&#39;s event loop</td>
+</tr>
+<tr>
+<td>Message Dispatch</td>
+<td><code>DispatchMessage()</code></td>
+<td>Event bubbling / <code>dispatch()</code></td>
+</tr>
+<tr>
+<td>Window Procedure</td>
+<td><code>WndProc()</code></td>
+<td>Event handlers / Reducers</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="deep-dive-redux-vs-winapi-similarities">Deep Dive: Redux vs WinAPI Similarities</h2>
+<p>Redux and WinAPI share a remarkably similar architecture. Both use a <strong>message-driven, unidirectional data flow</strong> pattern.</p>
+<h3 id="structural-comparison">Structural Comparison</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────────────────┐
+│                     WINAPI                    │         REDUX           │
+├───────────────────────────────────────────────┼─────────────────────────┤
+│                                               │                         │
+│  User clicks button                           │  User clicks button     │
+│         ↓                                     │         ↓               │
+│  Windows creates WM_COMMAND message           │  <span class="hljs-keyword">Create</span> <span class="hljs-keyword">action</span> <span class="hljs-keyword">object</span>   │
+│         ↓                                     │         ↓               │
+│  Message goes <span class="hljs-keyword">to</span> queue                        │  dispatch(<span class="hljs-keyword">action</span>)       │
+│         ↓                                     │         ↓               │
+│  GetMessage() retrieves it                    │  Redux receives <span class="hljs-keyword">action</span>  │
+│         ↓                                     │         ↓               │
+│  DispatchMessage() routes <span class="hljs-keyword">to</span> WndProc          │  <span class="hljs-keyword">Action</span> sent <span class="hljs-keyword">to</span> reducer │
+│         ↓                                     │         ↓               │
+│  WndProc <span class="hljs-keyword">switch</span>(msg)                          │  reducer <span class="hljs-keyword">switch</span>(<span class="hljs-keyword">type</span>)   │
+│         ↓                                     │         ↓               │
+│  <span class="hljs-keyword">Update</span> state + UI                            │  <span class="hljs-keyword">Return</span> <span class="hljs-keyword">new</span> state       │
+│                                               │         ↓               │
+│                                               │  Notify subscribers     │
+│                                               │         ↓               │
+│                                               │  <span class="hljs-keyword">Update</span> UI              │
+│                                               │                         │
+└───────────────────────────────────────────────┴─────────────────────────┘
+</code></pre><h3 id="the-switch-statement-pattern">The Switch Statement Pattern</h3>
+<p>Both WinAPI and Redux use a switch statement to handle different message/action types:</p>
+<p><strong>WinAPI WndProc:</strong></p>
+<pre><code class="lang-c">LRESULT CALLBACK WndProc(<span class="hljs-keyword">HWND</span> <span class="hljs-keyword">hwnd</span>, UINT msg, <span class="hljs-keyword">WPARAM</span> <span class="hljs-keyword">wParam</span>, <span class="hljs-keyword">LPARAM</span> <span class="hljs-keyword">lParam</span>) {
+    <span class="hljs-keyword">switch</span>(msg) {
+        <span class="hljs-keyword">case</span> WM_CREATE:
+            <span class="hljs-comment">// Initialize</span>
+            <span class="hljs-keyword">return</span> <span class="hljs-number">0</span><span class="hljs-comment">;</span>
+        <span class="hljs-keyword">case</span> WM_COMMAND:
+            <span class="hljs-keyword">switch</span>(LOWORD(<span class="hljs-keyword">wParam</span>)) {
+                <span class="hljs-keyword">case</span> ID_BTN_INCREMENT:
+                    g_counter++<span class="hljs-comment">;</span>
+                    UpdateCounterDisplay()<span class="hljs-comment">;</span>
+                    <span class="hljs-keyword">break</span><span class="hljs-comment">;</span>
+                <span class="hljs-keyword">case</span> ID_BTN_DECREMENT:
+                    g_counter--<span class="hljs-comment">;</span>
+                    UpdateCounterDisplay()<span class="hljs-comment">;</span>
+                    <span class="hljs-keyword">break</span><span class="hljs-comment">;</span>
+            }
+            <span class="hljs-keyword">return</span> <span class="hljs-number">0</span><span class="hljs-comment">;</span>
+        <span class="hljs-keyword">case</span> WM_PAINT:
+            <span class="hljs-comment">// Repaint window</span>
+            <span class="hljs-keyword">return</span> <span class="hljs-number">0</span><span class="hljs-comment">;</span>
+        <span class="hljs-keyword">case</span> WM_DESTROY:
+            PostQuitMessage(<span class="hljs-number">0</span>)<span class="hljs-comment">;</span>
+            <span class="hljs-keyword">return</span> <span class="hljs-number">0</span><span class="hljs-comment">;</span>
+        <span class="hljs-keyword">default</span>:
+            <span class="hljs-keyword">return</span> DefWindowProc(<span class="hljs-keyword">hwnd</span>, msg, <span class="hljs-keyword">wParam</span>, <span class="hljs-keyword">lParam</span>)<span class="hljs-comment">;</span>
+    }
+}
+</code></pre>
+<p><strong>Redux Reducer:</strong></p>
+<pre><code class="lang-javascript">const counter = (<span class="hljs-keyword">state</span> = <span class="hljs-number">0</span>, action) =&gt; {
+    switch(action.type) {
+        case 'INCREMENT':
+            return <span class="hljs-keyword">state</span> + <span class="hljs-number">1</span>;
+        case 'DECREMENT':
+            return <span class="hljs-keyword">state</span> - <span class="hljs-number">1</span>;
+        <span class="hljs-keyword">default</span>:
+            return <span class="hljs-keyword">state</span>;
+    }
+}
+</code></pre>
+<h3 id="message-action-object-comparison">Message/Action Object Comparison</h3>
+<p><strong>WinAPI Message:</strong></p>
+<pre><code class="lang-c">typedef struct tagMSG {
+    <span class="hljs-type">HWND</span>   hwnd;      // <span class="hljs-type">Target</span> window (like target component)
+    <span class="hljs-type">UINT</span>   message;   // <span class="hljs-type">Message</span> type (like action.type)
+    <span class="hljs-type">WPARAM</span> wParam;    // <span class="hljs-type">Parameter</span> 1 (like action.payload)
+    <span class="hljs-type">LPARAM</span> lParam;    // <span class="hljs-type">Parameter</span> 2 (additional payload)
+    <span class="hljs-type">DWORD</span>  time;      // <span class="hljs-type">Timestamp</span>
+    <span class="hljs-type">POINT</span>  pt;        // <span class="hljs-type">Mouse</span> position
+} <span class="hljs-type">MSG</span>;
+
+// <span class="hljs-type">Example</span> message
+<span class="hljs-type">MSG</span> msg;
+<span class="hljs-title">msg</span>.message = <span class="hljs-type">WM_COMMAND</span>;
+<span class="hljs-title">msg</span>.wParam = <span class="hljs-type">MAKEWPARAM</span>(<span class="hljs-type">ID_BTN_INCREMENT</span>, <span class="hljs-type">BN_CLICKED</span>);
+</code></pre>
+<p><strong>Redux Action:</strong></p>
+<pre><code class="lang-javascript"><span class="hljs-comment">// Action object</span>
+{
+    <span class="hljs-attribute">type</span>: <span class="hljs-string">'INCREMENT'</span>,           <span class="hljs-comment">// Like msg.message</span>
+    <span class="hljs-attribute">payload</span>: { <span class="hljs-attribute">amount</span>: <span class="hljs-number">1</span> }       <span class="hljs-comment">// Like wParam/lParam</span>
+}
+
+<span class="hljs-comment">// Action with more data</span>
+{
+    <span class="hljs-attribute">type</span>: <span class="hljs-string">'UPDATE_FIRST_NAME'</span>,
+    <span class="hljs-attribute">first_name</span>: <span class="hljs-string">'John'</span>           <span class="hljs-comment">// Payload data</span>
+}
+</code></pre>
+<h3 id="dispatch-mechanism">Dispatch Mechanism</h3>
+<p><strong>WinAPI:</strong></p>
+<pre><code class="lang-c"><span class="hljs-comment">// Sending a message (synchronous)</span>
+<span class="hljs-selector-tag">SendMessage</span>(hwnd, WM_COMMAND, MAKEWPARAM(ID_BTN_INCREMENT, BN_CLICKED), <span class="hljs-number">0</span>);
+
+<span class="hljs-comment">// Posting a message (asynchronous, goes to queue)</span>
+<span class="hljs-selector-tag">PostMessage</span>(hwnd, WM_COMMAND, MAKEWPARAM(ID_BTN_INCREMENT, BN_CLICKED), <span class="hljs-number">0</span>);
+
+<span class="hljs-comment">// Message loop dispatches to WndProc</span>
+<span class="hljs-selector-tag">while</span> (GetMessage(&amp;msg, NULL, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>)) {
+    <span class="hljs-selector-tag">TranslateMessage</span>(&amp;msg);
+    <span class="hljs-selector-tag">DispatchMessage</span>(&amp;msg);  <span class="hljs-comment">// → WndProc()</span>
+}
+</code></pre>
+<p><strong>Redux:</strong></p>
+<pre><code class="lang-javascript"><span class="hljs-comment">// Dispatch action (synchronous by default)</span>
+<span class="hljs-selector-tag">store</span><span class="hljs-selector-class">.dispatch</span>({<span class="hljs-attribute">type</span>: <span class="hljs-string">'INCREMENT'</span>});
+
+<span class="hljs-comment">// With middleware, can be async</span>
+<span class="hljs-selector-tag">store</span><span class="hljs-selector-class">.dispatch</span>(asyncAction());  <span class="hljs-comment">// Thunk middleware</span>
+</code></pre>
+<h3 id="subscription-notification-pattern">Subscription/Notification Pattern</h3>
+<p><strong>WinAPI:</strong></p>
+<pre><code class="lang-c"><span class="hljs-comment">// Windows notifies via messages</span>
+<span class="hljs-comment">// WM_PAINT - window needs redraw</span>
+<span class="hljs-comment">// WM_SIZE - window resized</span>
+<span class="hljs-comment">// Custom notifications via WM_USER + n</span>
+
+<span class="hljs-comment">// Or use Observer pattern manually:</span>
+<span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">NotifyObservers</span><span class="hljs-params">()</span> </span>{
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; observerCount; i++) {
+        SendMessage(observers[i], WM_APP_STATE_CHANGED, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+    }
+}
+</code></pre>
+<p><strong>Redux:</strong></p>
+<pre><code class="lang-javascript">// Subscribe <span class="hljs-keyword">to</span> <span class="hljs-keyword">state</span> changes
+const unsubscribe = store.subscribe(() =&gt; {
+    // Called after every dispatch
+    const <span class="hljs-keyword">state</span> = store.getState();
+    $('<span class="hljs-comment">#num').html(state);</span>
+});
+
+// Unsubscribe when done
+unsubscribe();
+</code></pre>
+<h3 id="state-management">State Management</h3>
+<p><strong>WinAPI (Traditional):</strong></p>
+<pre><code class="lang-c"><span class="hljs-comment">// Global state (common but not ideal)</span>
+<span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> g_counter = <span class="hljs-number">0</span>;
+<span class="hljs-keyword">static</span> <span class="hljs-keyword">char</span> g_firstName[<span class="hljs-number">256</span>] = <span class="hljs-string">""</span>;
+<span class="hljs-keyword">static</span> <span class="hljs-keyword">char</span> g_lastName[<span class="hljs-number">256</span>] = <span class="hljs-string">""</span>;
+
+<span class="hljs-comment">// Or structured state</span>
+<span class="hljs-keyword">typedef</span> <span class="hljs-keyword">struct</span> {
+    <span class="hljs-keyword">int</span> counter;
+    <span class="hljs-keyword">char</span> firstName[<span class="hljs-number">256</span>];
+    <span class="hljs-keyword">char</span> lastName[<span class="hljs-number">256</span>];
+} AppState;
+
+<span class="hljs-keyword">static</span> AppState g_state = {<span class="hljs-number">0</span>, <span class="hljs-string">""</span>, <span class="hljs-string">""</span>};
+</code></pre>
+<p><strong>Redux:</strong></p>
+<pre><code class="lang-javascript">// Initial <span class="hljs-keyword">state</span>
+const initialState = {
+    counter: <span class="hljs-number">0</span>,
+    firstName: '',
+    lastName: ''
+};
+
+// State is managed by the store
+const store = Redux.createStore(reducer, initialState);
+
+// Read <span class="hljs-keyword">state</span> (never modify directly)
+const currentState = store.getState();
+</code></pre>
+<h3 id="key-insight-immutability">Key Insight: Immutability</h3>
+<p>The biggest difference is Redux&#39;s emphasis on <strong>immutability</strong>:</p>
+<p><strong>WinAPI (Mutable):</strong></p>
+<pre><code class="lang-c"><span class="hljs-comment">// Direct mutation</span>
+g_counter++;
+g_state.counter = g_state.counter + <span class="hljs-number">1</span>;
+</code></pre>
+<p><strong>Redux (Immutable):</strong></p>
+<pre><code class="lang-javascript">// Always return NEW <span class="hljs-keyword">state</span> object
+case 'INCREMENT':
+    return <span class="hljs-keyword">state</span> + <span class="hljs-number">1</span>;  // Primitives are immutable
+
+case 'UPDATE_NAME':
+    return Object.assign({}, <span class="hljs-keyword">state</span>, { firstName: action.payload });
+    // Or with spread: return { ...<span class="hljs-keyword">state</span>, firstName: action.payload };
+</code></pre>
+<h3 id="summary-why-they-re-similar">Summary: Why They&#39;re Similar</h3>
+<table>
+<thead>
+<tr>
+<th>Shared Concept</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Central dispatcher</strong></td>
+<td>Single point for all state changes</td>
+</tr>
+<tr>
+<td><strong>Message/Action types</strong></td>
+<td>Categorize what happened</td>
+</tr>
+<tr>
+<td><strong>Switch-based routing</strong></td>
+<td>Route to appropriate handler</td>
+</tr>
+<tr>
+<td><strong>Unidirectional flow</strong></td>
+<td>Predictable data movement</td>
+</tr>
+<tr>
+<td><strong>Separation of concerns</strong></td>
+<td>UI events → State logic → UI updates</td>
+</tr>
+</tbody>
+</table>
+<p>Redux essentially took the battle-tested WinAPI message loop pattern and adapted it for JavaScript with added benefits:</p>
+<ul>
+<li>Immutable state (easier debugging, time-travel)</li>
+<li>Pure functions (testability)</li>
+<li>Middleware support (async, logging)</li>
+<li>DevTools integration</li>
+</ul>
+<hr>
+<h2 id="summary-comparison-table">Summary Comparison Table</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
 <th>Classic</th>
 <th>Proxy</th>
+<th>Redux</th>
+<th>WinAPI</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Syntax</td>
-<td><code>State.updateState(&quot;num&quot;, State.num + 1)</code></td>
-<td><code>State.num++</code></td>
-</tr>
-<tr>
-<td>Forget to update?</td>
-<td>Possible</td>
-<td>Impossible</td>
-</tr>
-<tr>
-<td>Browser support</td>
-<td>All browsers</td>
-<td>Modern browsers</td>
-</tr>
-<tr>
-<td>Performance</td>
-<td>Updates all elements</td>
-<td>Updates only matching elements</td>
-</tr>
-<tr>
-<td>Learning curve</td>
-<td>Easy</td>
+<td><strong>Syntax Complexity</strong></td>
+<td>Low</td>
+<td>Very Low</td>
 <td>Medium</td>
+<td>High</td>
 </tr>
 <tr>
-<td>Used by</td>
-<td>Simple apps</td>
-<td>Vue.js, MobX</td>
+<td><strong>Boilerplate</strong></td>
+<td>Low</td>
+<td>Very Low</td>
+<td>Medium</td>
+<td>High</td>
+</tr>
+<tr>
+<td><strong>Predictability</strong></td>
+<td>Medium</td>
+<td>Medium</td>
+<td>High</td>
+<td>High</td>
+</tr>
+<tr>
+<td><strong>Debugging</strong></td>
+<td>Manual</td>
+<td>Difficult</td>
+<td>Excellent</td>
+<td>Debugger</td>
+</tr>
+<tr>
+<td><strong>Learning Curve</strong></td>
+<td>Easy</td>
+<td>Easy</td>
+<td>Moderate</td>
+<td>Steep</td>
+</tr>
+<tr>
+<td><strong>IE Support</strong></td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td><strong>Immutability</strong></td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td><strong>Time-Travel Debug</strong></td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
 </tr>
 </tbody>
 </table>
 <hr>
-<h2 id="which-should-you-use-">Which Should You Use?</h2>
-<p><strong>Use Classic if:</strong></p>
+<h2 id="which-should-you-choose-">Which Should You Choose?</h2>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Recommended Approach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Legacy browser support needed</td>
+<td>Classic</td>
+</tr>
+<tr>
+<td>Small modern web app</td>
+<td>Proxy</td>
+</tr>
+<tr>
+<td>Large complex application</td>
+<td>Redux</td>
+</tr>
+<tr>
+<td>Team needs strict patterns</td>
+<td>Redux</td>
+</tr>
+<tr>
+<td>Coming from WinAPI background</td>
+<td>Redux (familiar pattern)</td>
+</tr>
+<tr>
+<td>Quick prototype</td>
+<td>Proxy</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="live-examples">Live Examples</h2>
 <ul>
-<li>You need to support Internet Explorer</li>
-<li>You want explicit control over when updates happen</li>
-<li>You&#39;re building a simple page</li>
-</ul>
-<p><strong>Use Proxy if:</strong></p>
-<ul>
-<li>You only support modern browsers</li>
-<li>You want cleaner, more natural code</li>
-<li>You&#39;re building a more complex application</li>
+<li><strong>Classic &amp; Proxy:</strong> <code>index.html</code> (toggle by commenting/uncommenting scripts)</li>
+<li><strong>Redux:</strong> <code>redux-example.html</code></li>
 </ul>
 <hr>
-<h2 id="credits">Credits</h2>
+<h2 id="further-reading">Further Reading</h2>
 <ul>
-<li>Classic approach inspired by <a href="https://codepen.io/meredithmatthews/pen/dyoOMKE">Meredith Matthews&#39; Redux with jQuery example</a></li>
-<li>Proxy approach inspired by Vue.js reactivity system</li>
+<li><a href="https://redux.js.org/">Redux Documentation</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy">MDN Proxy Documentation</a></li>
+<li><a href="https://vuejs.org/guide/extras/reactivity-in-depth.html">Vue.js Reactivity in Depth</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows/win32/winmsg/about-messages-and-message-queues">WinAPI Message Loop</a></li>
+<li><a href="https://codepen.io/meredithmatthews/pen/abOmPwW">jDux Example by Meredith Matthews</a></li>
 </ul>
