@@ -1,0 +1,319 @@
+<h1 id="javascript-state-management-with-jquery">JavaScript State Management with jQuery</h1>
+<p>A guide to managing application state and keeping the DOM in sync using two approaches: Classic (explicit updates) and Proxy-based (automatic reactivity).</p>
+<h2 id="the-problem">The Problem</h2>
+<p>When building interactive web pages, you need to:</p>
+<ol>
+<li>Store data (state) somewhere</li>
+<li>Update the DOM when state changes</li>
+<li>Update state when users interact with the page</li>
+</ol>
+<p>Without a system, this becomes messy and error-prone.</p>
+<hr>
+<h2 id="html-structure">HTML Structure</h2>
+<p>Both approaches use the same HTML with custom data attributes:</p>
+<pre><code class="lang-html"><span class="hljs-tag">&lt;<span class="hljs-name">h1</span> <span class="hljs-attr">data-tag</span>=<span class="hljs-string">"titleColor"</span> <span class="hljs-attr">data-color</span>&gt;</span>jDux is super cool!<span class="hljs-tag">&lt;/<span class="hljs-name">h1</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"buttonRed"</span>&gt;</span>red<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"buttonBlue"</span>&gt;</span>blue<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"buttonGreen"</span>&gt;</span>green<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
+    Count = <span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">data-tag</span>=<span class="hljs-string">"num"</span> <span class="hljs-attr">data-text</span>&gt;</span>#<span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"button"</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"inc"</span>&gt;</span>+<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"button"</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"dec"</span>&gt;</span>-<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>First Name: <span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">data-tag</span>=<span class="hljs-string">"firstName"</span> <span class="hljs-attr">data-text</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"firstNameInput"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"text"</span> /&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>Last Name: <span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">data-tag</span>=<span class="hljs-string">"lastName"</span> <span class="hljs-attr">data-text</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"lastNameInput"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"text"</span> /&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+</code></pre>
+<h3 id="data-attributes-explained">Data Attributes Explained</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data-tag</code></td>
+<td>Links element to a state property name</td>
+</tr>
+<tr>
+<td><code>data-text</code></td>
+<td>Marks element for text content updates</td>
+</tr>
+<tr>
+<td><code>data-color</code></td>
+<td>Marks element for color attribute updates</td>
+</tr>
+</tbody>
+</table>
+<h3 id="css-for-color-binding">CSS for Color Binding</h3>
+<pre><code class="lang-css"><span class="hljs-selector-attr">[data-color='black']</span> { <span class="hljs-attribute">color</span>: black; }
+<span class="hljs-selector-attr">[data-color='red']</span> { <span class="hljs-attribute">color</span>: red; }
+<span class="hljs-selector-attr">[data-color='blue']</span> { <span class="hljs-attribute">color</span>: blue; }
+<span class="hljs-selector-attr">[data-color='green']</span> { <span class="hljs-attribute">color</span>: green; }
+</code></pre>
+<p>When <code>data-color=&quot;red&quot;</code> is set on an element, CSS attribute selectors automatically apply the color.</p>
+<hr>
+<h2 id="approach-1-classic-explicit-update-function-">Approach 1: Classic (Explicit Update Function)</h2>
+<h3 id="concept">Concept</h3>
+<p>Create a State object with an <code>updateState()</code> method. Every time you change state, you must call this method.</p>
+<h3 id="code">Code</h3>
+<pre><code class="lang-javascript"><span class="hljs-keyword">var</span> State = {
+    <span class="hljs-attr">num</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">firstName</span>: <span class="hljs-string">""</span>,
+    <span class="hljs-attr">lastName</span>: <span class="hljs-string">""</span>,
+    <span class="hljs-attr">titleColor</span>: <span class="hljs-string">"black"</span>,
+    <span class="hljs-attr">updateState</span>: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">key, value</span>) </span>{
+        <span class="hljs-keyword">this</span>[key] = value;
+
+        <span class="hljs-comment">// Update all text displays</span>
+        $(<span class="hljs-string">"[data-text]"</span>).each(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">index, elem</span>) </span>{
+            <span class="hljs-keyword">var</span> tag = $(elem).attr(<span class="hljs-string">"data-tag"</span>);
+            $(elem).text(State[tag]);
+        });
+
+        <span class="hljs-comment">// Update all color displays</span>
+        $(<span class="hljs-string">"[data-color]"</span>).each(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">index, elem</span>) </span>{
+            <span class="hljs-keyword">var</span> tag = $(elem).attr(<span class="hljs-string">"data-tag"</span>);
+            $(elem).attr(<span class="hljs-string">"data-color"</span>, State[tag]);
+        });
+    }
+};
+
+<span class="hljs-comment">// Initialize on page load</span>
+$(<span class="hljs-built_in">document</span>).ready(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+    State.updateState();
+});
+
+<span class="hljs-comment">// Event handlers</span>
+$(<span class="hljs-string">"#inc"</span>).on(<span class="hljs-string">"click"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+    State.updateState(<span class="hljs-string">"num"</span>, State.num + <span class="hljs-number">1</span>);
+});
+
+$(<span class="hljs-string">"#dec"</span>).on(<span class="hljs-string">"click"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+    State.updateState(<span class="hljs-string">"num"</span>, State.num - <span class="hljs-number">1</span>);
+});
+
+$(<span class="hljs-string">"#firstNameInput"</span>).on(<span class="hljs-string">"input"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+    State.updateState(<span class="hljs-string">"firstName"</span>, $(<span class="hljs-keyword">this</span>).val());
+});
+
+$(<span class="hljs-string">"#lastNameInput"</span>).on(<span class="hljs-string">"input"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+    State.updateState(<span class="hljs-string">"lastName"</span>, $(<span class="hljs-keyword">this</span>).val());
+});
+
+$(<span class="hljs-string">'[class^=button]'</span>).on(<span class="hljs-string">"click"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">e</span>) </span>{
+    State.updateState(<span class="hljs-string">"titleColor"</span>, e.target.innerText);
+});
+</code></pre>
+<h3 id="how-it-works">How It Works</h3>
+<ol>
+<li><strong>State Object</strong>: Holds all application data plus the <code>updateState</code> method</li>
+<li><strong>updateState(key, value)</strong>:<ul>
+<li>Sets <code>this[key] = value</code></li>
+<li>Loops through ALL elements with <code>data-text</code>, updates their text</li>
+<li>Loops through ALL elements with <code>data-color</code>, updates their attribute</li>
+</ul>
+</li>
+<li><strong>Event Handlers</strong>: Must explicitly call <code>State.updateState()</code> with key and new value</li>
+</ol>
+<h3 id="pros">Pros</h3>
+<ul>
+<li>Simple to understand</li>
+<li>Works in all browsers (including old ones)</li>
+<li>Easy to debug - you can see exactly when updates happen</li>
+</ul>
+<h3 id="cons">Cons</h3>
+<ul>
+<li>Must remember to call <code>updateState()</code> every time</li>
+<li>Verbose syntax: <code>State.updateState(&quot;num&quot;, State.num + 1)</code></li>
+<li>Re-renders ALL elements on every change (inefficient for large apps)</li>
+</ul>
+<hr>
+<h2 id="approach-2-proxy-based-reactivity">Approach 2: Proxy-Based Reactivity</h2>
+<h3 id="concept">Concept</h3>
+<p>Use JavaScript&#39;s <code>Proxy</code> to intercept property assignments. The DOM updates automatically when you change any state value.</p>
+<h3 id="what-is-proxy-">What is Proxy?</h3>
+<p><code>Proxy</code> is a built-in JavaScript feature (ES6/2015) that wraps an object and intercepts operations like getting or setting properties.</p>
+<pre><code class="lang-javascript"><span class="hljs-keyword">var</span> proxy = <span class="hljs-keyword">new</span> Proxy(targetObject, {
+    <span class="hljs-keyword">get</span>(obj, key) { <span class="hljs-comment">/* intercepts reads */</span> },
+    <span class="hljs-keyword">set</span>(obj, key, <span class="hljs-keyword">value</span>) { <span class="hljs-comment">/* intercepts writes */</span> }
+});
+</code></pre>
+<h3 id="code">Code</h3>
+<pre><code class="lang-javascript"><span class="hljs-keyword">var</span> State = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Proxy</span>({
+    <span class="hljs-attr">num</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">firstName</span>: <span class="hljs-string">""</span>,
+    <span class="hljs-attr">lastName</span>: <span class="hljs-string">""</span>,
+    <span class="hljs-attr">titleColor</span>: <span class="hljs-string">"black"</span>
+}, {
+    set(obj, key, value) {
+        obj[key] = value;
+        $(<span class="hljs-string">'[data-tag="'</span> + key + <span class="hljs-string">'"][data-text]'</span>).text(value);
+        $(<span class="hljs-string">'[data-tag="'</span> + key + <span class="hljs-string">'"][data-color]'</span>).attr(<span class="hljs-string">"data-color"</span>, value);
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+    }
+});
+
+<span class="hljs-comment">// Initialize on page load</span>
+$(<span class="hljs-built_in">document</span>).ready(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> key <span class="hljs-keyword">in</span> State) {
+        $(<span class="hljs-string">'[data-tag="'</span> + key + <span class="hljs-string">'"][data-text]'</span>).text(State[key]);
+        $(<span class="hljs-string">'[data-tag="'</span> + key + <span class="hljs-string">'"][data-color]'</span>).attr(<span class="hljs-string">"data-color"</span>, State[key]);
+    }
+});
+
+<span class="hljs-comment">// Event handlers - much simpler!</span>
+$(<span class="hljs-string">"#inc"</span>).on(<span class="hljs-string">"click"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+    State.num++;
+});
+
+$(<span class="hljs-string">"#dec"</span>).on(<span class="hljs-string">"click"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+    State.num--;
+});
+
+$(<span class="hljs-string">"#firstNameInput"</span>).on(<span class="hljs-string">"input"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+    State.firstName = $(<span class="hljs-keyword">this</span>).val();
+});
+
+$(<span class="hljs-string">"#lastNameInput"</span>).on(<span class="hljs-string">"input"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+    State.lastName = $(<span class="hljs-keyword">this</span>).val();
+});
+
+$(<span class="hljs-string">'[class^=button]'</span>).on(<span class="hljs-string">"click"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">e</span>) </span>{
+    State.titleColor = e.target.innerText;
+});
+</code></pre>
+<h3 id="how-it-works">How It Works</h3>
+<p>When you write <code>State.num++</code>, here&#39;s what happens behind the scenes:</p>
+<pre><code>State.num++
+    ↓
+Expands to: State<span class="hljs-selector-class">.num</span> = State<span class="hljs-selector-class">.num</span> + <span class="hljs-number">1</span>
+    ↓
+┌───────────────────────────────┐
+│  Proxy intercepts             │
+├───────────────────────────────┤
+│  <span class="hljs-number">1</span>. GET trap → returns <span class="hljs-number">0</span>      │
+│  <span class="hljs-number">2</span>. JavaScript does <span class="hljs-number">0</span> + <span class="hljs-number">1</span> = <span class="hljs-number">1</span> │
+│  <span class="hljs-number">3</span>. SET trap → receives <span class="hljs-number">1</span>     │
+│     - stores <span class="hljs-keyword">in</span> obj<span class="hljs-selector-class">.num</span>       │
+│     - updates DOM             │
+└───────────────────────────────┘
+    ↓
+&lt;<span class="hljs-selector-tag">span</span> data-tag=<span class="hljs-string">"num"</span>&gt; shows <span class="hljs-string">"1"</span>
+</code></pre><h3 id="pros">Pros</h3>
+<ul>
+<li>Natural JavaScript syntax: <code>State.num++</code> instead of <code>State.updateState(&quot;num&quot;, State.num + 1)</code></li>
+<li>Impossible to forget to trigger updates</li>
+<li>Only updates elements matching the changed key (more efficient)</li>
+<li>This is how Vue.js implements reactivity</li>
+</ul>
+<h3 id="cons">Cons</h3>
+<ul>
+<li>Not supported in Internet Explorer</li>
+<li>Slightly harder to understand initially</li>
+<li>Debugging can be trickier (updates happen &quot;magically&quot;)</li>
+</ul>
+<h3 id="browser-support">Browser Support</h3>
+<table>
+<thead>
+<tr>
+<th>Browser</th>
+<th>Minimum Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome</td>
+<td>49+ (2016)</td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td>18+ (2013)</td>
+</tr>
+<tr>
+<td>Safari</td>
+<td>10+ (2016)</td>
+</tr>
+<tr>
+<td>Edge</td>
+<td>12+ (2015)</td>
+</tr>
+<tr>
+<td>IE</td>
+<td>Not supported</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="comparison">Comparison</h2>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Classic</th>
+<th>Proxy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Syntax</td>
+<td><code>State.updateState(&quot;num&quot;, State.num + 1)</code></td>
+<td><code>State.num++</code></td>
+</tr>
+<tr>
+<td>Forget to update?</td>
+<td>Possible</td>
+<td>Impossible</td>
+</tr>
+<tr>
+<td>Browser support</td>
+<td>All browsers</td>
+<td>Modern browsers</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Updates all elements</td>
+<td>Updates only matching elements</td>
+</tr>
+<tr>
+<td>Learning curve</td>
+<td>Easy</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Used by</td>
+<td>Simple apps</td>
+<td>Vue.js, MobX</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="which-should-you-use-">Which Should You Use?</h2>
+<p><strong>Use Classic if:</strong></p>
+<ul>
+<li>You need to support Internet Explorer</li>
+<li>You want explicit control over when updates happen</li>
+<li>You&#39;re building a simple page</li>
+</ul>
+<p><strong>Use Proxy if:</strong></p>
+<ul>
+<li>You only support modern browsers</li>
+<li>You want cleaner, more natural code</li>
+<li>You&#39;re building a more complex application</li>
+</ul>
+<hr>
+<h2 id="credits">Credits</h2>
+<ul>
+<li>Classic approach inspired by <a href="https://codepen.io/meredithmatthews/pen/dyoOMKE">Meredith Matthews&#39; Redux with jQuery example</a></li>
+<li>Proxy approach inspired by Vue.js reactivity system</li>
+</ul>
