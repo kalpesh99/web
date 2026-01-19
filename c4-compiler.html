@@ -1,0 +1,286 @@
+<h1 id="c4-compiler-1-hour-teaching-guide">C4 Compiler: 1-Hour Teaching Guide</h1>
+<h2 id="overview-5-minutes-">Overview (5 minutes)</h2>
+<p>C4 is a <strong>self-compiling C compiler</strong> in ~500 lines. It demonstrates that a working compiler can be built with just <strong>4 functions</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Purpose</th>
+<th>Think of it as...</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>next()</code></td>
+<td>Lexer/Tokenizer</td>
+<td>&quot;What&#39;s the next word?&quot;</td>
+</tr>
+<tr>
+<td><code>expr()</code></td>
+<td>Expression Parser</td>
+<td>&quot;What does this calculate?&quot;</td>
+</tr>
+<tr>
+<td><code>stmt()</code></td>
+<td>Statement Parser</td>
+<td>&quot;What does this do?&quot;</td>
+</tr>
+<tr>
+<td><code>main()</code></td>
+<td>Driver + VM</td>
+<td>&quot;Run everything&quot;</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key insight</strong>: Instead of generating x86/ARM assembly, C4 generates bytecode for its own tiny virtual machine. This cuts complexity by 90%.</p>
+<hr>
+<h2 id="part-1-the-big-picture-10-minutes-">Part 1: The Big Picture (10 minutes)</h2>
+<h3 id="data-flow">Data Flow</h3>
+<pre><code>┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│ S<span class="hljs-function"><span class="hljs-title">ource</span> Code │ --&gt;</span> │   L<span class="hljs-function"><span class="hljs-title">exer</span>     │ --&gt;</span> │   P<span class="hljs-function"><span class="hljs-title">arser</span>    │ --&gt;</span> │  VM Code    │
+│   (<span class="hljs-keyword">text</span>)    │     │   next()    │     │ stmt/expr   │     │ (integers)  │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+                                                                   │
+                                                                   v
+                                                            ┌─────────────┐
+                                                            │ Virtual     │
+                                                            │ Machine     │
+                                                            │ (executes)  │
+                                                            └─────────────┘
+</code></pre><h3 id="memory-regions-line-346-350-">Memory Regions (line 346-350)</h3>
+<pre><code class="lang-c"><span class="hljs-attribute">poolsz</span> = <span class="hljs-number">256</span>*<span class="hljs-number">1024</span><span class="hljs-comment">;</span>
+<span class="hljs-attribute">sym</span> = malloc(poolsz)<span class="hljs-comment">;   // Symbol table</span>
+<span class="hljs-attribute">e</span> = malloc(poolsz)<span class="hljs-comment">;     // Code/text area  </span>
+<span class="hljs-attribute">data</span> = malloc(poolsz)<span class="hljs-comment">;  // Data area (strings, globals)</span>
+<span class="hljs-attribute">sp</span> = malloc(poolsz)<span class="hljs-comment">;    // Stack</span>
+</code></pre>
+<hr>
+<h2 id="part-2-the-lexer-next-10-minutes-">Part 2: The Lexer - <code>next()</code> (10 minutes)</h2>
+<h3 id="what-it-does">What it does</h3>
+<p>Reads characters, produces tokens. Sets global <code>tk</code> to token type.</p>
+<h3 id="demo-trace-through-an-identifier">Demo: Trace through an identifier</h3>
+<pre><code class="lang-c"><span class="hljs-regexp">//</span> Input: <span class="hljs-string">"main"</span>
+<span class="hljs-regexp">//</span> Starting at line <span class="hljs-number">70</span>:
+
+pp = p - <span class="hljs-number">1</span>;                    <span class="hljs-regexp">//</span> pp points to <span class="hljs-string">'m'</span>
+tk = <span class="hljs-string">'m'</span>;                      <span class="hljs-regexp">//</span> initial char
+tk = tk * <span class="hljs-number">147</span> + <span class="hljs-string">'a'</span>;           <span class="hljs-regexp">//</span> hash: <span class="hljs-string">'m'</span>*<span class="hljs-number">147</span> + <span class="hljs-string">'a'</span>
+tk = tk * <span class="hljs-number">147</span> + <span class="hljs-string">'i'</span>;           <span class="hljs-regexp">//</span> hash continues
+tk = tk * <span class="hljs-number">147</span> + <span class="hljs-string">'n'</span>;           <span class="hljs-regexp">//</span> ...
+tk = (tk &lt;&lt; <span class="hljs-number">6</span>) + <span class="hljs-number">4</span>;            <span class="hljs-regexp">//</span> final hash + length
+
+<span class="hljs-regexp">//</span> Look up <span class="hljs-keyword">in</span> symbol table
+<span class="hljs-regexp">//</span> If found → return its token type
+<span class="hljs-regexp">//</span> If not → add as new Id
+</code></pre>
+<h3 id="key-token-types-line-31-35-">Key Token Types (line 31-35)</h3>
+<pre><code class="lang-c">enum {
+  Num = <span class="hljs-number">128</span>,  <span class="hljs-comment">// Number literal</span>
+  Fun,        <span class="hljs-comment">// Function</span>
+  Sys,        <span class="hljs-comment">// System call (printf, malloc, etc.)</span>
+  Glo,        <span class="hljs-comment">// Global variable</span>
+  Loc,        <span class="hljs-comment">// Local variable</span>
+  Id,         <span class="hljs-comment">// Identifier (unknown/new)</span>
+  <span class="hljs-comment">// Keywords:</span>
+  Char, <span class="hljs-keyword">Else</span>, Enum, <span class="hljs-keyword">If</span>, Int, Return, Sizeof, <span class="hljs-keyword">While</span>,
+  <span class="hljs-comment">// Operators (in precedence order!):</span>
+  <span class="hljs-keyword">Assign</span>, Cond, Lor, Lan, <span class="hljs-keyword">Or</span>, <span class="hljs-keyword">Xor</span>, <span class="hljs-keyword">And</span>, 
+  <span class="hljs-keyword">Eq</span>, <span class="hljs-keyword">Ne</span>, <span class="hljs-keyword">Lt</span>, <span class="hljs-keyword">Gt</span>, <span class="hljs-keyword">Le</span>, <span class="hljs-keyword">Ge</span>, Shl, Shr, 
+  Add, Sub, Mul, <span class="hljs-built-in">Div</span>, <span class="hljs-built-in">Mod</span>, Inc, Dec, Brak
+};
+</code></pre>
+<p><strong>Teaching point</strong>: Operators are ordered by precedence. Lower value = lower precedence.</p>
+<hr>
+<h2 id="part-3-the-expression-parser-expr-15-minutes-">Part 3: The Expression Parser - <code>expr()</code> (15 minutes)</h2>
+<h3 id="the-algorithm-precedence-climbing">The Algorithm: Precedence Climbing</h3>
+<pre><code class="lang-c"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">expr</span><span class="hljs-params">(<span class="hljs-keyword">int</span> lev)</span> </span>{
+    <span class="hljs-comment">// Phase 1: Parse the "atom" (number, variable, prefix op)</span>
+
+    <span class="hljs-comment">// Phase 2: While next operator has precedence &gt;= lev</span>
+    <span class="hljs-keyword">while</span> (tk &gt;= lev) {
+        <span class="hljs-comment">// Handle the binary operator</span>
+        <span class="hljs-comment">// Recursively parse right side with higher precedence</span>
+    }
+}
+</code></pre>
+<h3 id="demo-parse-a-b-c-">Demo: Parse <code>a + b * c</code></h3>
+<pre><code>expr(Assign)                    // <span class="hljs-keyword">Start</span> <span class="hljs-keyword">with</span> lowest precedence
+├── <span class="hljs-keyword">Parse</span> <span class="hljs-string">'a'</span> → IMM/LEA         // Phase <span class="hljs-number">1</span>: atom
+└── See <span class="hljs-string">'+'</span> (<span class="hljs-keyword">Add</span> &gt;= Assign) ✓   // Phase <span class="hljs-number">2</span>: <span class="hljs-keyword">loop</span>
+    ├── PSH                     // Push <span class="hljs-string">'a'</span>
+    └── expr(Mul)               // <span class="hljs-keyword">Right</span> side <span class="hljs-keyword">at</span> higher prec
+        ├── <span class="hljs-keyword">Parse</span> <span class="hljs-string">'b'</span>           // Phase <span class="hljs-number">1</span>
+        └── See <span class="hljs-string">'*'</span> (Mul &gt;= Mul) ✓
+            ├── PSH             // Push <span class="hljs-string">'b'</span>
+            └── expr(Inc)       // Even higher prec
+                └── <span class="hljs-keyword">Parse</span> <span class="hljs-string">'c'</span>   // Phase <span class="hljs-number">1</span>
+                └── <span class="hljs-keyword">No</span> more ops
+            └── MUL             // Generate multiply
+        └── <span class="hljs-keyword">No</span> more ops <span class="hljs-keyword">at</span> Mul <span class="hljs-keyword">level</span>
+    └── <span class="hljs-keyword">ADD</span>                     // Generate <span class="hljs-keyword">add</span>
+</code></pre><p><strong>Result</strong>: <code>b * c</code> is evaluated first (correct precedence!)</p>
+<h3 id="code-generation-is-inline">Code Generation is Inline</h3>
+<p>Every parsing action generates VM code immediately:</p>
+<pre><code class="lang-c"><span class="hljs-comment">// Number literal (line 139):</span>
+*++e = IMM; *++e = ival;    <span class="hljs-comment">// Load immediate</span>
+
+<span class="hljs-comment">// Variable (line 168-169):</span>
+*++e = LEA; *++e = loc - d[Val];  <span class="hljs-comment">// Local: Load Effective Address</span>
+*++e = LI;                         <span class="hljs-comment">// Then load the value</span>
+
+<span class="hljs-comment">// Binary add (line 247-250):</span>
+*++e = PSH;     <span class="hljs-comment">// Push left operand</span>
+<span class="hljs-keyword">expr</span>(Mul);      <span class="hljs-comment">// Parse right operand</span>
+*++e = ADD;     <span class="hljs-comment">// Add them</span>
+</code></pre>
+<hr>
+<h2 id="part-4-the-statement-parser-stmt-10-minutes-">Part 4: The Statement Parser - <code>stmt()</code> (10 minutes)</h2>
+<h3 id="pattern-parse-structure-generate-jumps">Pattern: Parse structure, generate jumps</h3>
+<pre><code class="lang-c"><span class="hljs-keyword">if</span> <span class="hljs-comment">(tk == If)</span> {
+    <span class="hljs-comment">// 1. Parse condition</span>
+    expr<span class="hljs-comment">(Assign)</span>;
+
+    <span class="hljs-comment">// 2. Generate conditional branch</span>
+    *++e = BZ;          <span class="hljs-comment">// Branch if Zero</span>
+    b = ++e;            <span class="hljs-comment">// Save address to patch</span>
+
+    <span class="hljs-comment">// 3. Parse then-body</span>
+    stmt<span class="hljs-comment">()</span>;
+
+    <span class="hljs-comment">// 4. Handle else</span>
+    <span class="hljs-keyword">if</span> <span class="hljs-comment">(tk == Else)</span> {
+        *b = <span class="hljs-comment">(int)</span><span class="hljs-comment">(e + 3)</span>;   <span class="hljs-comment">// Patch: jump past else</span>
+        *++e = JMP;
+        b = ++e;
+        stmt<span class="hljs-comment">()</span>;              <span class="hljs-comment">// Parse else-body</span>
+    }
+
+    <span class="hljs-comment">// 5. Patch final jump target</span>
+    *b = <span class="hljs-comment">(int)</span><span class="hljs-comment">(e + 1)</span>;
+}
+</code></pre>
+<h3 id="generated-code-for-if-x-a-else-b-">Generated code for <code>if (x) A; else B;</code></h3>
+<pre><code>    &lt;condition code&gt;    <span class="hljs-comment">; result in 'a'</span>
+    <span class="hljs-keyword">BZ </span> else_addr       <span class="hljs-comment">; if a==0, jump to else</span>
+    &lt;A code&gt;            <span class="hljs-comment">; then-body</span>
+    <span class="hljs-keyword">JMP </span>end_addr        <span class="hljs-comment">; skip else</span>
+<span class="hljs-symbol">else_addr:</span>
+    &lt;<span class="hljs-keyword">B </span>code&gt;            <span class="hljs-comment">; else-body</span>
+<span class="hljs-symbol">end_addr:</span>
+    ...                 <span class="hljs-comment">; continue</span>
+</code></pre><hr>
+<h2 id="part-5-the-virtual-machine-10-minutes-">Part 5: The Virtual Machine (10 minutes)</h2>
+<h3 id="why-a-vm-">Why a VM?</h3>
+<table>
+<thead>
+<tr>
+<th>Without VM</th>
+<th>With VM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>x86 instruction encoding</td>
+<td>Integer array</td>
+</tr>
+<tr>
+<td>Register allocation</td>
+<td>Single accumulator</td>
+</tr>
+<tr>
+<td>Calling conventions</td>
+<td>Simple stack</td>
+</tr>
+<tr>
+<td>Platform-specific</td>
+<td>100% portable</td>
+</tr>
+<tr>
+<td>~5000+ lines</td>
+<td>~50 lines</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-registers">The Registers</h3>
+<pre><code class="lang-c"><span class="hljs-built_in">int</span> *pc;   // <span class="hljs-function"><span class="hljs-keyword">Program</span></span> Counter - points to next instruction
+<span class="hljs-built_in">int</span> *sp;   // Stack <span class="hljs-keyword">Pointer</span> - grows downward  
+<span class="hljs-built_in">int</span> *bp;   // Base <span class="hljs-keyword">Pointer</span> - frame for locals
+<span class="hljs-built_in">int</span> a;     // Accumulator - holds current <span class="hljs-keyword">value</span>
+</code></pre>
+<h3 id="key-instructions">Key Instructions</h3>
+<pre><code class="lang-c">// Memory
+<span class="hljs-symbol">IMM</span> val    → a = val               // Load immediate
+<span class="hljs-symbol">LEA</span> off    → a = <span class="hljs-keyword">bp </span>+ off          // Load local <span class="hljs-keyword">address
+</span><span class="hljs-symbol">LI</span>         → a = *(int*)a          // Load int from <span class="hljs-keyword">address
+</span><span class="hljs-symbol">SI</span>         → *<span class="hljs-built_in">sp</span>++ = a             // Store int to <span class="hljs-keyword">address
+</span><span class="hljs-symbol">PSH</span>        → *--<span class="hljs-built_in">sp</span> = a             // <span class="hljs-keyword">Push </span>accumulator
+
+// Control flow
+<span class="hljs-symbol">JMP</span> <span class="hljs-keyword">addr </span>  → <span class="hljs-built_in">pc</span> = <span class="hljs-keyword">addr </span>            // Unconditional jump
+<span class="hljs-keyword">BZ </span> <span class="hljs-keyword">addr </span>  → <span class="hljs-meta">if</span> (a=<span class="hljs-number">=0</span>) <span class="hljs-built_in">pc</span> = <span class="hljs-keyword">addr </span>  // <span class="hljs-keyword">Branch </span><span class="hljs-meta">if</span> zero
+<span class="hljs-symbol">JSR</span> <span class="hljs-keyword">addr </span>  → <span class="hljs-keyword">push(pc+1); </span><span class="hljs-built_in">pc</span> = <span class="hljs-keyword">addr </span>// Call <span class="hljs-meta">function</span>
+<span class="hljs-symbol">LEV</span>        → <span class="hljs-built_in">sp</span><span class="hljs-symbol">=bp</span><span class="hljs-comment">; pop bp,pc      // Return</span>
+
+// Arithmetic (all: <span class="hljs-keyword">pop </span>operand, compute, result in a)
+<span class="hljs-keyword">ADD </span>       → a = *<span class="hljs-built_in">sp</span>++ + a
+<span class="hljs-keyword">SUB </span>       → a = *<span class="hljs-built_in">sp</span>++ - a
+<span class="hljs-keyword">MUL </span>       → a = *<span class="hljs-built_in">sp</span>++ * a
+// etc.
+</code></pre>
+<h3 id="execution-loop-lines-476-527-">Execution Loop (lines 476-527)</h3>
+<pre><code class="lang-c"><span class="hljs-keyword">while</span> <span class="hljs-comment">(1)</span> {
+    i = *pc++;  <span class="hljs-comment">// Fetch instruction</span>
+
+    <span class="hljs-keyword">if</span>      <span class="hljs-comment">(i == IMM)</span> a = *pc++;
+    else <span class="hljs-keyword">if</span> <span class="hljs-comment">(i == LEA)</span> a = <span class="hljs-comment">(int)</span><span class="hljs-comment">(bp + *pc++)</span>;
+    else <span class="hljs-keyword">if</span> <span class="hljs-comment">(i == JMP)</span> pc = <span class="hljs-comment">(int *)</span>*pc;
+    <span class="hljs-comment">// ... 30 more one-liners</span>
+}
+</code></pre>
+<p><strong>Teaching point</strong>: Each instruction is ONE line of C!</p>
+<hr>
+<h2 id="hands-on-exercises-if-time-permits-">Hands-On Exercises (if time permits)</h2>
+<h3 id="exercise-1-trace-hello-c-compilation">Exercise 1: Trace <code>hello.c</code> compilation</h3>
+<p>Run: <code>./c4 -s hello.c</code></p>
+<p>Observe the generated code and map each instruction back to the source.</p>
+<h3 id="exercise-2-add-a-new-operator">Exercise 2: Add a new operator</h3>
+<p>Add the <code>%=</code> (modulo-assign) operator:</p>
+<ol>
+<li>Add token to enum</li>
+<li>Handle in <code>next()</code> </li>
+<li>Handle in <code>expr()</code></li>
+</ol>
+<h3 id="exercise-3-trace-vm-execution">Exercise 3: Trace VM execution</h3>
+<p>Run: <code>./c4 -d hello.c</code></p>
+<p>Watch each instruction execute with register states.</p>
+<hr>
+<h2 id="summary-slide">Summary Slide</h2>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│                     <span class="hljs-built_in">C4</span> = <span class="hljs-number">4</span> Functions                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  next()  ──→  Characters to Tokens                          │
+│               <span class="hljs-string">"if"</span> → <span class="hljs-meta">If</span>, <span class="hljs-string">"123"</span> → Num, <span class="hljs-string">"x"</span> → Id              │
+│                                                             │
+│  expr()  ──→  Tokens to Expression Tree (+ <span class="hljs-meta">code</span> gen)        │
+│               Precedence climbing algorithm                  │
+│               Generates: IMM, PSH, <span class="hljs-keyword">ADD, </span>etc.                │
+│                                                             │
+│  <span class="hljs-keyword">stmt() </span> ──→  Expressions to Control Flow (+ <span class="hljs-meta">code</span> gen)      │
+│               Handles: <span class="hljs-meta">if</span>, <span class="hljs-meta">while</span>, return, <span class="hljs-keyword">blocks </span>           │
+│               Generates: <span class="hljs-keyword">BZ, </span>JMP, LEV, etc.                 │
+│                                                             │
+│  main()  ──→  Orchestrate + Execute                         │
+│               Symbol table, parsing, VM interpreter          │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│  Key Insight: VM instead of native <span class="hljs-meta">code</span> = <span class="hljs-number">90</span>% less work     │
+└─────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+<h2 id="further-reading">Further Reading</h2>
+<ol>
+<li><strong>Run with flags</strong>: <code>./c4 -s file.c</code> (show generated code), <code>./c4 -d file.c</code> (trace execution)</li>
+<li><strong>Self-compilation</strong>: <code>./c4 c4.c hello.c</code> - C4 compiles itself, then runs hello.c!</li>
+<li><strong>Annotated versions</strong>: Search &quot;c4 compiler annotated&quot; for heavily commented forks</li>
+<li><strong>Similar projects</strong>: chibicc, 8cc, tcc (Tiny C Compiler)</li>
+</ol>
